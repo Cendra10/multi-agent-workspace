@@ -1,5 +1,6 @@
 from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
+from llm import ask
 
 class State (TypedDict):
     task: str
@@ -7,7 +8,11 @@ class State (TypedDict):
     result: str
 
 def planner(state: State) -> dict:
-    return {"plan": f"Plan for: {state['task']}"}
+    system_prompt = "You are a planner. Create a short plan in 2-3 steps."
+    user_prompt = f"Create a plan for this task: {state['task']}"
+
+    plan = ask(system_prompt, user_prompt)
+    return {"plan": plan}
 
 def worker (state: State) -> dict:
     return {"result": f"Done using: {state['plan']}"}
@@ -21,5 +26,5 @@ builder.add_edge("worker", END)
 
 graph = builder.compile()
 
-output = graph.invoke({"task": "write a sumamry"})
+output = graph.invoke({"task": "write a summary"})
 print(output)
