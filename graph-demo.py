@@ -21,12 +21,23 @@ def worker (state: State) -> dict:
     result = ask(system_prompt, user_prompt)
     return {"result": result}
 
+def supervisor (state: State) -> str:
+    plan = state.get("plan")
+    result = state.get("result")
+
+    if not plan:
+        return ("planner")
+    elif not result:
+        return ("worker")
+    else:
+        return END
+
 builder = StateGraph(State)
 builder.add_node("planner", planner)
 builder.add_node("worker", worker)
-builder.add_edge(START, "planner")
-builder.add_edge("planner", "worker")
-builder.add_edge("worker", END)
+builder.add_conditional_edges(START, supervisor)
+builder.add_conditional_edges("planner", supervisor)
+builder.add_conditional_edges("worker", supervisor)
 
 graph = builder.compile()
 
