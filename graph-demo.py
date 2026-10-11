@@ -32,12 +32,40 @@ def supervisor (state: State) -> str:
     else:
         return END
 
+def supervisor_llm(state:State) -> str:
+    system_prompt = (
+        "Choose exactly one: planner, worker or FINISH. "
+        "If plan is missing, choose planner. "
+        "If plan exists but result is missing, choose worker. "
+        "If both exist, choose FINISH. "
+        "Reply with one word only. "
+    )
+    user_prompt = (
+        f"Task: {state.get('task', '')}\n"
+        f"Plan: {state.get('plan', '')}\n"
+        f"Result: {state.get('result', '')}"
+    )
+    source = ask(system_prompt, user_prompt)
+    source_result = source.strip().lower()
+
+    expected = supervisor(state)
+
+    if source_result == "finish":
+        source_result = END
+
+    if source_result != expected:
+        print(f"LLM ditolak: {source_result}, gunakan: {expected}")
+
+        source_result = expected
+    
+    return source_result
+
 builder = StateGraph(State)
 builder.add_node("planner", planner)
 builder.add_node("worker", worker)
-builder.add_conditional_edges(START, supervisor)
-builder.add_conditional_edges("planner", supervisor)
-builder.add_conditional_edges("worker", supervisor)
+builder.add_conditional_edges(START, supervisor_llm)
+builder.add_conditional_edges("planner", supervisor_llm)
+builder.add_conditional_edges("worker", supervisor_llm)
 
 graph = builder.compile()
 
