@@ -5,6 +5,7 @@ from llm import ask
 class State (TypedDict):
     task: str
     plan: str
+    review: str
     result: str
 
 def planner(state: State) -> dict:
@@ -21,14 +22,33 @@ def worker (state: State) -> dict:
     result = ask(system_prompt, user_prompt)
     return {"result": result}
 
+def reviewer (state: State) -> dict:
+    system_prompt = (
+        "You are a reviewer. Strictly verify whether "
+        "the result addresses the task. "
+        "respond in 2-3 sentences."
+    )
+    user_prompt = (
+        f"Task: {state['task']}\n"
+        f"Plan: {state['plan']}\n"
+        f"Result: {state['result']}"
+    )
+
+    review = ask(system_prompt, user_prompt)
+
+    return {"review": review}
+
 def supervisor (state: State) -> str:
     plan = state.get("plan")
     result = state.get("result")
+    review = state.get("review")
 
     if not plan:
         return ("planner")
     elif not result:
         return ("worker")
+    elif not review:
+        return ("review")
     else:
         return END
 
@@ -63,9 +83,11 @@ def supervisor_llm(state:State) -> str:
 builder = StateGraph(State)
 builder.add_node("planner", planner)
 builder.add_node("worker", worker)
+builder.add_node("review", reviewer)
 builder.add_conditional_edges(START, supervisor_llm)
 builder.add_conditional_edges("planner", supervisor_llm)
 builder.add_conditional_edges("worker", supervisor_llm)
+builder.add_conditional_edges("review", supervisor_llm)
 
 graph = builder.compile()
 
