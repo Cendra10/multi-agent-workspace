@@ -26,7 +26,9 @@ def reviewer (state: State) -> dict:
     system_prompt = (
         "You are a reviewer. Strictly verify whether "
         "the result addresses the task. "
-        "respond in 2-3 sentences."
+        "respond ONLY in APPROVED OR REVISE . "
+        "APPROVED - The result answers the task correctly. "
+        "REVISE - The result does not explain enough details. "
     )
     user_prompt = (
         f"Task: {state['task']}\n"
