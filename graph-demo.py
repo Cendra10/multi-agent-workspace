@@ -54,16 +54,18 @@ def supervisor (state: State) -> str:
 
 def supervisor_llm(state:State) -> str:
     system_prompt = (
-        "Choose exactly one: planner, worker or FINISH. "
+        "Choose exactly one: planner, worker, review or FINISH. "
         "If plan is missing, choose planner. "
         "If plan exists but result is missing, choose worker. "
-        "If both exist, choose FINISH. "
+        "If plan and result exists but review is missing, choose review. "
+        "If all exist, choose FINISH. "
         "Reply with one word only. "
     )
     user_prompt = (
         f"Task: {state.get('task', '')}\n"
         f"Plan: {state.get('plan', '')}\n"
-        f"Result: {state.get('result', '')}"
+        f"Result: {state.get('result', '')}\n"
+        f"Review: {state.get('review', '')}"
     )
     source = ask(system_prompt, user_prompt)
     source_result = source.strip().lower()
