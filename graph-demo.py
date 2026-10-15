@@ -17,16 +17,21 @@ def planner(state: State) -> dict:
     return {"plan": plan}
 
 def worker (state: State):
+    read_review = state.get("review", "")
     attempts = state.get("attempts", 0)
     attempts += 1
 
     system_prompt = "You are a worker. Execute the task by following the provided plan."
     user_prompt = f"Task: {state['task']}\nPlan: {state['plan']}"
 
+    if read_review:
+        user_prompt += f"\nReviewer feedback: {read_review}"
+
     result = ask(system_prompt, user_prompt)
     return {
         "result": result,
-        "attempts": attempts
+        "attempts": attempts,
+        "review": ""
         }
 
 def reviewer (state: State) -> dict:
@@ -47,10 +52,13 @@ def reviewer (state: State) -> dict:
 
     return {"review": review}
 
+MAX_ATTEMPTS = 3
+
 def supervisor (state: State) -> str:
     plan = state.get("plan")
     result = state.get("result")
     review = state.get("review")
+    attempts = state.get("attempts", 0)
 
     if not plan:
         return ("planner")
@@ -58,6 +66,8 @@ def supervisor (state: State) -> str:
         return ("worker")
     elif not review:
         return ("review")
+    elif review .startswith ("REVISE") and attempts < MAX_ATTEMPTS:
+        return ("worker")
     else:
         return END
 
@@ -105,4 +115,4 @@ graph = builder.compile()
 output = graph.invoke({
     "task": "Explain what a REST API is in 3 sentences"
 })
-print(output)
+print(output["review"], output["attempts"])
