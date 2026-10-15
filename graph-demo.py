@@ -7,6 +7,7 @@ class State (TypedDict):
     plan: str
     review: str
     result: str
+    attempts: int
 
 def planner(state: State) -> dict:
     system_prompt = "You are a planner. Create a short plan in 2-3 steps."
@@ -15,12 +16,18 @@ def planner(state: State) -> dict:
     plan = ask(system_prompt, user_prompt)
     return {"plan": plan}
 
-def worker (state: State) -> dict:
+def worker (state: State):
+    attempts = state.get("attempts", 0)
+    attempts += 1
+
     system_prompt = "You are a worker. Execute the task by following the provided plan."
     user_prompt = f"Task: {state['task']}\nPlan: {state['plan']}"
 
     result = ask(system_prompt, user_prompt)
-    return {"result": result}
+    return {
+        "result": result,
+        "attempts": attempts
+        }
 
 def reviewer (state: State) -> dict:
     system_prompt = (
