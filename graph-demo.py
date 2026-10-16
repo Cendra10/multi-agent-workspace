@@ -86,19 +86,17 @@ def supervisor_llm(state:State) -> str:
         f"Result: {state.get('result', '')}\n"
         f"Review: {state.get('review', '')}"
     )
-    source = ask(system_prompt, user_prompt)
-    source_result = source.strip().lower()
+    try:
+        source = ask(system_prompt, user_prompt)
+        source_result = source.strip().lower()
 
-    expected = supervisor(state)
+        if source_result == "finish":
+            source_result = END
+        
+    except Exception:
+        print(f"LLM error, falling back to Python rules")
+        return supervisor(state)
 
-    if source_result == "finish":
-        source_result = END
-
-    if source_result != expected:
-        print(f"LLM ditolak: {source_result}, gunakan: {expected}")
-
-        source_result = expected
-    
     return source_result
 
 builder = StateGraph(State)
